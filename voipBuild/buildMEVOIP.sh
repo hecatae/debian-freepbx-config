@@ -17,6 +17,9 @@ EXTRAS=true
 BUILDASTERISK=true
 BUILDDIGIVOICE=false
 
+
+DISTRO=$(lsb_release -s -i)
+
 chmod +x $BASEDIR/*.sh
 
 whiptail --title "ME VOIP Asterisk Install" --msgbox "This insane script is going to install Asterisk and FreePBX on your Debian Lenny system from scratch. You have $NUMCPUS CPUs... really?" 12 78
@@ -44,7 +47,7 @@ else
 	#read
 fi
 
-whiptail --title "ME VOIP Asterisk Install" --msgbox "This will now install some Debian packages and configure them." 12 78
+whiptail --title "ME VOIP Asterisk Install" --msgbox "This will now install some $DISTRO packages and configure them." 12 78
 
 # Preseed mysql
 echo mysql-server mysql-server/root_password select root | debconf-set-selections
@@ -54,11 +57,17 @@ echo mysql-server mysql-server/root_password_again select root | debconf-set-sel
 echo "postfix postfix/main_mailer_type select Internet Site" | debconf-set-selections
 echo "postfix postfix/mailname select $(hostname -f)" | debconf-set-selections
 
+if [ "$DISTRO" = "Ubuntu" ]; then
+	DISTROPACKAGES="mysql-client libmysqlclient-dev mysql-common mysql-server-5.1 mysql-client-5.1"
+else
+	DISTROPACKAGES="mysql-client libmysqlclient15-dev mysql-common mysql-server-5.0 mysql-client-5.0"
+fi
+
 # Debian Deps
 aptitude -y install gcc g++ make libncurses5-dev subversion libcurl4-openssl-dev libiksemel-dev libogg-dev libpq-dev libreadline5-dev libsnmp-dev \
-	libssl-dev libvorbis-dev zlib1g-dev libsnmp9-dev libgmime-2.0-2-dev libspandsp-dev mysql-client libmysqlclient15-dev \
+	libssl-dev libvorbis-dev zlib1g-dev libsnmp9-dev libgmime-2.0-2-dev libspandsp-dev $DISTROPACKAGES \
 	php5-mysql php-pear php-db php5-gd freetds-common freetds-dev libspeex-dev libspeexdsp-dev unixodbc-dev libsqlite3-dev sqlite3 libsqlite0-dev sqlite \
-	apache2 libapache2-mod-php5 mysql-common mysql-server-5.0 mysql-client-5.0 curl wget nano less ccze postfix linux-headers-`uname -r`
+	apache2 libapache2-mod-php5 curl wget nano less ccze postfix linux-headers-`uname -r`
 
 	
 cd $BASEDIR
