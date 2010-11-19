@@ -111,7 +111,7 @@ class VOIPXmlConfiguredElement {
 			if (!is_null($data)) {
 				$value = $data;
 			} else {
-				$value = $this->{$varName};
+				$value = @$this->{$varName};
 			}
 			$valueArr[] = $value;
 		}
@@ -208,7 +208,7 @@ class VOIPXmlConfiguredElement {
 		$ret[] = $partes[0];
 		
 		$theprio = 1;
-		if ($partes[1]) {
+		if (@$partes[1]) {
 			$again = explode(")", $partes[1]);
 			$theprio = (int)$again[0];
 		}
