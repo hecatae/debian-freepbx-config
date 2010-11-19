@@ -12,6 +12,19 @@ MYIPADDR=$(ip addr | tr -s " " | grep "^\ inet\ " | cut -d " " -f 3 | cut -d "/"
 whiptail --title "ME VOIP FreePBX Install" --msgbox "This will now install some Debian packages and configure them at hostname $MYHOSTNAME and IP address $MYIPADDR." 12 78
 
 cd $BASEDIR
+# set locales...
+echo -e "en_US.UTF-8 UTF-8\npt_BR ISO-8859-1\npt_BR.UTF-8 UTF-8\npt_PT ISO-8859-1\npt_PT.UTF-8 UTF-8\npt_PT@euro ISO-8859-15" > /etc/locale.gen
+/usr/sbin/locale-gen
+
+if ! grep -q "^asterisk" /etc/group ; then 
+	addgroup asterisk
+fi
+
+if ! grep -q "^asterisk" /etc/passwd ; then 
+	useradd -g asterisk -c "Asterisk PBX" -d /var/lib/asterisk asterisk
+fi
+cd $BASEDIR
+
 # original da Disc-OS?
 #wget -O Disc-OS-Sounds-1.0-pt_BR.tar.gz  "http://downloads.sourceforge.net/project/disc-os/Disc-OS%20Sounds/1.0-RELEASE/Disc-OS-Sounds-1.0-pt_BR.tar.gz?r=http%3A%2F%2Fsourceforge.net%2Fprojects%2Fdisc-os%2Ffiles%2F&ts=1289173263&use_mirror=ufpr"
 
@@ -23,18 +36,6 @@ if [ ! -e /var/lib/asterisk/sounds/pt_BR ]; then
 	cd /var/lib/asterisk/sounds
 	tar xzvf $BASEDIR/Disc-OS-Sounds-1.0-pt_BR_16.tar.gz
 	chown -R asterisk:asterisk /var/lib/asterisk/sounds
-fi
-
-# set locales...
-echo -e "en_US.UTF-8 UTF-8\npt_BR ISO-8859-1\npt_BR.UTF-8 UTF-8\npt_PT ISO-8859-1\npt_PT.UTF-8 UTF-8\npt_PT@euro ISO-8859-15" > /etc/locale.gen
-/usr/sbin/locale-gen
-
-if ! grep -q "^asterisk" /etc/group ; then 
-	addgroup asterisk
-fi
-
-if ! grep -q "^asterisk" /etc/passwd ; then 
-	useradd -g asterisk -c "Asterisk PBX" -d /var/lib/asterisk asterisk
 fi
 
 mkdir -p /var/run/asterisk
