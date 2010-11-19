@@ -227,7 +227,7 @@ class VOIPConfig extends VOIPXmlConfiguredElement {
 			$senha = trim($partes[0]);
 			
 			$this->debug("Trying to set current VM password $senha for extension $ext");
-			if (!$this->users[$ext]) {
+			if (!@$this->users[$ext]) {
 				$this->warn("Unable to keep VM password for extension $ext - ext not found.");
 			} else {
 				$this->users[$ext]->currVoiceMailPassword = $senha;
