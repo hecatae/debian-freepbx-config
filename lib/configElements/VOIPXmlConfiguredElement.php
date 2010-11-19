@@ -23,7 +23,7 @@ class VOIPXmlConfiguredElement {
 		if ($addTo) {
 			$varName = $addTo;
 			$theId = $this->getId();
-			if ($old = $this->config->{$varName}[$theId]) {
+			if ($old = @$this->config->{$varName}[$theId]) {
 				$oldname = $old->name;
 				$newname = $this->name;
 				$this->error("Duplicate extension entry in $varName for '$theId'. '$oldname' vs '$newname'");
@@ -33,7 +33,7 @@ class VOIPXmlConfiguredElement {
 
 			$varName = $addTo."Names";
 			$theId = $this->getName();
-			if ($old = $this->config->{$varName}[$theId]) {
+			if ($old = @$this->config->{$varName}[$theId]) {
 				$oldname = $old->extension;
 				$newname = $this->extension;
 				$this->error("Duplicate name entry in $varName for '$theId'. '$oldname' vs '$newname'");
@@ -45,7 +45,7 @@ class VOIPXmlConfiguredElement {
 			if ($callable) {
 				$varName = 'callables';
 				$theId = $this->getId();
-				if ($old = $this->config->{$varName}[$theId]) {
+				if ($old = @$this->config->{$varName}[$theId]) {
 					$oldname = get_class($old) . "-" . $old->name;
 					$newname = get_class($this) . "-" . $this->name;
 					$this->error("Duplicate callable extension for '$theId'. '$oldname' vs '$newname'");
@@ -57,10 +57,10 @@ class VOIPXmlConfiguredElement {
 	
 	public function writeExcelHeader($values, $sheetName='Another Sheet') {
 		// Handle the previous sheet cols...
-		if ($this->config->xlsSheet) {
+		if (@$this->config->xlsSheet) {
 			//$this->config->excelMaxCol
 			for ($i = 0; $i < $this->config->excelMaxCol; $i++) {
-				$width = $coldata['width'];
+				$width = @$coldata['width'];
 				$cell = $this->config->xlsSheet->getCellByColumnAndRow($i, 1);
 				$this->config->xlsSheet->getColumnDimension($cell->getColumn())->setAutoSize(true);
 			}		
