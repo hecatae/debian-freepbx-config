@@ -6,7 +6,7 @@ BASEDIR="$( cd "$( dirname "$0" )" && pwd )" #/usr/src/mevoip
 MYSQLUSER=root
 MYSQLPASS=root
 MYHOSTNAME=$(hostname -f)
-MYIPADDR=$(ip addr | tr -s " " | grep "^\ inet\ " | grep "eth0" | cut -d " " -f 3 | cut -d "/" -f 1)
+MYIPADDR=$(ip addr | tr -s " " | grep "^\ inet\ " | cut -d " " -f 3 | cut -d "/" -f 1 | grep "^192.168")
 
 
 whiptail --title "ME VOIP FreePBX Install" --msgbox "This will now install some Debian packages and configure them at hostname $MYHOSTNAME and IP address $MYIPADDR." 12 78
