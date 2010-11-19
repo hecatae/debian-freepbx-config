@@ -1,8 +1,8 @@
 #! /bin/bash
 
 # To start:
-# aptitude install subversion; svn checkout --username ricardop http://svn.dev.me.com.br/VOIPConfig/trunk/ /opt/mevoip
-# bash /opt/mevoip/meVoipBuild/buildMEVOIP.sh
+# aptitude install subversion; svn checkout http://debian-freepbx-config.googlecode.com/svn/trunk/ /opt/voip
+# bash /opt/voip/voipBuild/buildMEVOIP.sh
 
 
 set -e
@@ -15,7 +15,7 @@ MAKECPUS="-j $NUMCPUS"
 CLEAN=true
 EXTRAS=true
 BUILDASTERISK=true
-BUILDDIGIVOICE=true
+BUILDDIGIVOICE=false
 
 chmod +x $BASEDIR/*.sh
 
@@ -62,20 +62,23 @@ aptitude -y install gcc g++ make libncurses5-dev subversion libcurl4-openssl-dev
 
 	
 cd $BASEDIR
-if [ ! -e dgvchannel-1.0.5.tar.gz ]; then
-	wget "http://downloads.digivoice.com.br/pub/dgvchannel/stable/dgvchannel-1.0.5.tar.gz"
-fi
 
-if [ ! -e voicerlib-4.2.2.0.tar.gz ]; then
-	wget "http://downloads.digivoice.com.br/pub/voicerlib/linux/stable/voicerlib-4.2.2.0.tar.gz"
-fi
+if [ "$BUILDDIGIVOICE" = "true" ]; then
+	if [ ! -e dgvchannel-1.0.5.tar.gz ]; then
+		wget "http://downloads.digivoice.com.br/pub/dgvchannel/stable/dgvchannel-1.0.5.tar.gz"
+	fi
 
-if [ ! -e voicerlib-4.2.2.0 ]; then
-	tar xzvf voicerlib-4.2.2.0.tar.gz
-fi
+	if [ ! -e voicerlib-4.2.2.0.tar.gz ]; then
+		wget "http://downloads.digivoice.com.br/pub/voicerlib/linux/stable/voicerlib-4.2.2.0.tar.gz"
+	fi
 
-if [ ! -e dgvchannel-1.0.5 ]; then
-	tar xzvf dgvchannel-1.0.5.tar.gz
+	if [ ! -e voicerlib-4.2.2.0 ]; then
+		tar xzvf voicerlib-4.2.2.0.tar.gz
+	fi
+
+	if [ ! -e dgvchannel-1.0.5 ]; then
+		tar xzvf dgvchannel-1.0.5.tar.gz
+	fi
 fi
 
 if [ "$UPDATESVN" = "true" ]; then
