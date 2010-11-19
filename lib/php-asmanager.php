@@ -112,10 +112,12 @@ class AGI_AsteriskManager
 	function AGI_AsteriskManager($config=NULL, $optconfig=array())
 	{
 		// load config
+		/*
 		if(!is_null($config) && file_exists($config))
 			$this->config = parse_ini_file($config, true);
 		elseif(file_exists($DEFAULT_PHPAGI_CONFIG))
 			$this->config = parse_ini_file($DEFAULT_PHPAGI_CONFIG, true);
+		*/
 		
 		// If optconfig is specified, stuff vals and vars into 'asmanager' config array.
 		foreach($optconfig as $var=>$val)
