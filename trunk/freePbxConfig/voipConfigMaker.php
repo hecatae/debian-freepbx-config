@@ -20,8 +20,8 @@ $config = parseConfig("myvoip", "127.0.0.1");
 
 
 function parseConfig($basename, $server) {
-	$xmlfile = dirname(__FILE__).DIRECTORY_SEPARATOR.$basename.DIRECTORY_SEPARATOR.$basename.'.xml';
-	$xlsfile = dirname(__FILE__).DIRECTORY_SEPARATOR.$basename.DIRECTORY_SEPARATOR.$basename;
+	$xmlfile = '/etc/voip/voipconfig.xml'; 
+	$xlsfile = dirname(__FILE__).DIRECTORY_SEPARATOR.$basename;
 	if (! file_exists($xmlfile)) { VOIPXMLConfiguredElement::error("Can't find $xmlfile."); }
 
 	
@@ -32,13 +32,13 @@ function parseConfig($basename, $server) {
 	
 	
 	$objPHPExcel = phpexcel_createPHPExcelObject();
-	$objPHPExcel->getProperties()->setCreator("Mercado Eletrônico - MEVOIP - $basename")
-								 ->setLastModifiedBy("Mercado Eletrônico - MEVOIP - $basename")
-								 ->setTitle("Mercado Eletrônico - MEVOIP - $basename")
-								 ->setSubject("Mercado Eletrônico - MEVOIP - $basename")
-								 ->setDescription("Mercado Eletrônico - MEVOIP - $basename")
-								 ->setKeywords("Mercado Eletrônico - MEVOIP - $basename")
-								 ->setCategory("Mercado Eletrônico - MEVOIP - $basename");
+	$objPHPExcel->getProperties()->setCreator("freePbxConfig - MEVOIP - $basename")
+								 ->setLastModifiedBy("freePbxConfig - MEVOIP - $basename")
+								 ->setTitle("freePbxConfig - MEVOIP - $basename")
+								 ->setSubject("freePbxConfig - MEVOIP - $basename")
+								 ->setDescription("freePbxConfig - MEVOIP - $basename")
+								 ->setKeywords("freePbxConfig - MEVOIP - $basename")
+								 ->setCategory("freePbxConfig - MEVOIP - $basename");
 
 	$s = $objPHPExcel->setActiveSheetIndex(0);
 	$objPHPExcel->getActiveSheet()->setTitle('VOIP PABX');
