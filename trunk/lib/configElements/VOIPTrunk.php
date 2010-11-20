@@ -9,6 +9,7 @@ class VOIPTrunk extends VOIPXmlConfiguredElement {
 	public $custom = null;
 	public $isVONOtrunk = false;
 	public $isCustomTrunk = false;
+	public $isSIPURAtrunk = false;
 	
 	public function parse() {
 		$this->type = $this->readXMLAttrString("type");
@@ -20,6 +21,9 @@ class VOIPTrunk extends VOIPXmlConfiguredElement {
 		if ($this->type == "vono") {
 			$this->tech = "sip";
 			$this->isVONOtrunk = true;
+		} elseif ($this->type == "sipura_fxo") {
+			$this->tech = "sip";
+			$this->isSIPURAtrunk = true;
 		} elseif ($this->type == "digivoice") {
 			$this->tech = "custom";
 			$this->isCustomTrunk = true;
@@ -43,10 +47,10 @@ class VOIPTrunk extends VOIPXmlConfiguredElement {
 			'tech' => $this->tech,
 			'outcid' => "",
 			'keepcid' => "off",
-			'maxchans' => "",
+			'maxchans' => $this->isSIPURAtrunk ? "1" : "",
 			'failscript' => "",
 			'dialoutprefix' => "",
-			'channelid' => $this->isCustomTrunk ? $this->custom : $this->translateChars($this->name),
+			'channelid' => $this->isCustomTrunk ? $this->custom : ($this->isSIPURAtrunk ? $this->user : $this->translateChars($this->name)),
 			'usercontext' => $this->isCustomTrunk?"notneeded":"",
 			'provider' => "",
 			'disabled' => "off"
@@ -69,6 +73,26 @@ class VOIPTrunk extends VOIPXmlConfiguredElement {
 			$this->config->addSIPInsert("tr-peer-{$this->extension}", "type", "friend", $i++);
 			$this->config->addSIPInsert("tr-peer-{$this->extension}", "username", "{$this->user}", $i++);
 		}
+		
+		if ($this->isSIPURAtrunk) {
+			$i = 2;
+			$this->config->addSIPInsert("tr-peer-{$this->extension}", "account", "{$this->user}", $i++);
+			$this->config->addSIPInsert("tr-peer-{$this->extension}", "disallow", "all", $i++);
+			$this->config->addSIPInsert("tr-peer-{$this->extension}", "allow", "ulaw", $i++);
+			$this->config->addSIPInsert("tr-peer-{$this->extension}", "canreinvite", "no", $i++);
+			$this->config->addSIPInsert("tr-peer-{$this->extension}", "context", "from-trunk", $i++);
+			$this->config->addSIPInsert("tr-peer-{$this->extension}", "dtmfmode", "rfc2833", $i++);
+			$this->config->addSIPInsert("tr-peer-{$this->extension}", "host", "dynamic", $i++); // oh really? and how does it know?
+			$this->config->addSIPInsert("tr-peer-{$this->extension}", "incominglimit", "1", $i++);
+			$this->config->addSIPInsert("tr-peer-{$this->extension}", "nat", "never", $i++);
+			$this->config->addSIPInsert("tr-peer-{$this->extension}", "port", "5061", $i++);
+			$this->config->addSIPInsert("tr-peer-{$this->extension}", "qualify", "yes", $i++);
+			$this->config->addSIPInsert("tr-peer-{$this->extension}", "secret", "{$this->password}", $i++);
+			$this->config->addSIPInsert("tr-peer-{$this->extension}", "type", "friend", $i++);
+			$this->config->addSIPInsert("tr-peer-{$this->extension}", "username", "{$this->user}", $i++);		
+		}
+		
+		
 	}
 	
 }
