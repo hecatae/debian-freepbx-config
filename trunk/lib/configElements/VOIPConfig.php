@@ -17,13 +17,15 @@ class VOIPConfig extends VOIPXmlConfiguredElement {
 	public $externalIp = null;
 	public $localNet = null;
 	public $localNetMask = null;
+	public $externalIpType = null;
 	
 	
 	public function parse() {
 		$this->externalIp = (string)$this->xml->externalIp;
 		$this->localNet = (string)$this->xml->localNet;
 		$this->localNetMask = (string)$this->xml->localNetMask;
-	
+		$this->externalIpType = (string)$this->xml->externalIpType;
+		
 		$this->info("Local configs: External IP: $this->externalIp - Local Net: $this->localNet Mask: $this->localNetMask");
 	
 		foreach ($this->xml->users->user as $xml) {
@@ -137,8 +139,16 @@ class VOIPConfig extends VOIPXmlConfiguredElement {
 		$this->config->queryExec("REPLACE INTO admin (variable, value) VALUES ('need_reload', 'true')");
 		
 		$this->config->queryExec("REPLACE INTO sipsettings (keyword, data, seq, type) VALUES ('nat', 'yes', 39, 0)");
-		$this->config->queryExec("REPLACE INTO sipsettings (keyword, data, seq, type) VALUES ('nat_mode', 'externip', 10, 0)");
-		$this->config->queryExec("REPLACE INTO sipsettings (keyword, data, seq, type) VALUES ('externip_val', '{$this->externalIp}', 40, 0)");
+		
+		if ($this->externalIpType == "dynamic") {
+			$this->config->queryExec("REPLACE INTO sipsettings (keyword, data, seq, type) VALUES ('nat_mode', 'externhost', 10, 0)");
+			$this->config->queryExec("REPLACE INTO sipsettings (keyword, data, seq, type) VALUES ('externhost_val', '{$this->externalIp}', 40, 0)");
+			$this->config->queryExec("REPLACE INTO sipsettings (keyword, data, seq, type) VALUES ('externrefresh', '120', 41, 0)");
+		} else {
+			$this->config->queryExec("REPLACE INTO sipsettings (keyword, data, seq, type) VALUES ('nat_mode', 'externip', 10, 0)");
+			$this->config->queryExec("REPLACE INTO sipsettings (keyword, data, seq, type) VALUES ('externip_val', '{$this->externalIp}', 40, 0)");
+		}
+		
 		$this->config->queryExec("REPLACE INTO sipsettings (keyword, data, seq, type) VALUES ('localnet_0', '{$this->localNet}', 42, 0)");
 		$this->config->queryExec("REPLACE INTO sipsettings (keyword, data, seq, type) VALUES ('netmask_0', '{$this->localNetMask}', 0, 0)");
 		$this->config->queryExec("REPLACE INTO sipsettings (keyword, data, seq, type) VALUES ('sip_language', 'pt_BR', 0, 0)");
