@@ -4,10 +4,12 @@ class VOIPRingGroup extends VOIPXmlConfiguredElement  {
 	public $strategy = null;
 	public $prefix = null;
 	public $users = array();
+	public $postdest = null;
 	
 	public function parse() {
 		$this->strategy = $this->readXMLAttrString("strategy");
 		$this->prefix = $this->readXMLAttrString("prefix");
+		$this->postdest = $this->readXMLAttrString("postdest");
 	}
 	
 	public function getExcelColumnVars() {
@@ -39,7 +41,7 @@ class VOIPRingGroup extends VOIPXmlConfiguredElement  {
 			'grppre' => $this->getPrefixOrEmpty($this->prefix),
 			'grplist' => "$lista",
 			'annmsg_id' => "0",
-			'postdest' => "app-blackhole,busy,1",
+			'postdest' => $this->postdest? $this->postdest :"app-blackhole,busy,1",
 			'description' => $this->translateChars($this->name),
 			'alertinfo' => "",
 			'remotealert_id' => "0",

@@ -7,6 +7,7 @@ class VOIPInboundRoute extends VOIPXmlConfiguredElement {
 	public function parse() {
 		$this->destination = $this->readXMLAttrString("destination");
 		$this->prefix = $this->readXMLAttrString("prefix");
+		$this->cidlookup = $this->readXMLAttrString("cidlookup");
 	}
 	
 	public function applyConfigToFreePBX() {
@@ -29,6 +30,16 @@ class VOIPInboundRoute extends VOIPXmlConfiguredElement {
 			'pmmaxretries' => "3",
 			'pmminlength' => "10"
 			));
+			
+			
+		if ($this->cidlookup) {
+			$this->config->insert("cidlookup_incoming", array(
+				'cidlookup_id' => $this->cidlookup,
+				'extension' => $this->extension,
+				'cidnum' => ""
+			));
+		
+		}
 	}
 	
 }
