@@ -53,10 +53,6 @@ class VOIPUser extends VOIPXmlConfiguredElement {
 		} else {
 			$this->isSIP = true;
 		}
-		
-		
-		// @TODO: hack, remove later.
-		if ($this->email) $this->email = "ricardo@pardini.net";
 	}
 	
 	public function getExcelColumnVars() {
