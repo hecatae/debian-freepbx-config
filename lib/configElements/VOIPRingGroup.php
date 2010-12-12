@@ -37,7 +37,7 @@ class VOIPRingGroup extends VOIPXmlConfiguredElement  {
 		$this->config->insert("ringgroups", array(
 			'grpnum' => "{$this->extension}",
 			'strategy' => "{$this->strategy}",
-			'grptime' => "20",
+			'grptime' => "60",
 			'grppre' => $this->getPrefixOrEmpty($this->prefix),
 			'grplist' => "$lista",
 			'annmsg_id' => "0",
