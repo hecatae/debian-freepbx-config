@@ -178,6 +178,7 @@ class VOIPUser extends VOIPXmlConfiguredElement {
 		}
 		
 		if ($this->isIAX) {
+			$i = 2;
 			$this->config->addIAXInsert($this->extension, "secret", "{$this->secret}", $i++);
 			$this->config->addIAXInsert($this->extension, "notransfer", "yes", $i++);
 			$this->config->addIAXInsert($this->extension, "context", "from-internal", $i++);

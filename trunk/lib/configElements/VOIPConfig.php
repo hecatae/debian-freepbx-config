@@ -159,6 +159,7 @@ class VOIPConfig extends VOIPXmlConfiguredElement {
 		$this->config->queryExec("DELETE from devices");
 		$this->config->queryExec("DELETE from users");
 		$this->config->queryExec("DELETE from fax_users");
+		$this->config->queryExec("DELETE from fax_incoming");
 		$this->config->queryExec("DELETE from queues_config");
 		$this->config->queryExec("DELETE from queues_details");
 		$this->config->queryExec("DELETE from ringgroups");
