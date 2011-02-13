@@ -5,17 +5,20 @@ class VOIPRingGroup extends VOIPXmlConfiguredElement  {
 	public $prefix = null;
 	public $users = array();
 	public $postdest = null;
+	public $ringtime = null;
 	
 	public function parse() {
 		$this->strategy = $this->readXMLAttrString("strategy");
 		$this->prefix = $this->readXMLAttrString("prefix");
 		$this->postdest = $this->readXMLAttrString("postdest");
+		$this->ringtime = $this->readXMLAttrInt("ringtime");
 	}
 	
 	public function getExcelColumnVars() {
 		return array(
 			'extension' => null, 
 			'name' => null,
+			'ringtime' => null,
 			'strategy' => null,
 			'prefix' => null,
 			'users' => $this->getArrayItemInfo($this->users)
@@ -37,7 +40,7 @@ class VOIPRingGroup extends VOIPXmlConfiguredElement  {
 		$this->config->insert("ringgroups", array(
 			'grpnum' => "{$this->extension}",
 			'strategy' => "{$this->strategy}",
-			'grptime' => "60",
+			'grptime' => "{$this->ringtime}",
 			'grppre' => $this->getPrefixOrEmpty($this->prefix),
 			'grplist' => "$lista",
 			'annmsg_id' => "0",
