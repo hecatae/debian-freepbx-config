@@ -18,7 +18,7 @@ EXTRAS=true
 BUILDASTERISK=true
 BUILDDIGIVOICE=false
 BUILDREDFONE=false
-PAUSING="no"
+PAUSING="yes"
 DGVSCHEME="unstable"
 DEBIANVLIBDINIT=""
 
@@ -147,12 +147,14 @@ if [ "$UPDATESVN" = "true" ]; then
 	cd $BASEDIR
 	svn co http://svn.digium.com/svn/asterisk/tags/1.6.2.19 asterisk
 	
-	cd $BASEDIR
-	svn co http://svn.digium.com/svn/dahdi/linux/tags/2.4.1.2 dahdi
+	if [ "$BUILDDAHDI" = "true" ]; then
+		cd $BASEDIR
+		svn co http://svn.digium.com/svn/dahdi/linux/tags/2.4.1.2 dahdi
 
-	cd $BASEDIR
-	svn co http://svn.digium.com/svn/dahdi/tools/tags/2.4.1 dahdi_tools
-
+		cd $BASEDIR
+		svn co http://svn.digium.com/svn/dahdi/tools/tags/2.4.1 dahdi_tools
+	fi
+	
 	cd $BASEDIR
 	svn co http://svn.digium.com/svn/libpri/tags/1.4.11.5 libpri
 
@@ -199,20 +201,22 @@ fi
 
 if [ "$BUILDASTERISK" = "true" ]; then
 
-	cd $BASEDIR/dahdi
-	if [ "$CLEAN" = "true" ]; then make distclean; fi
-	make $MAKECPUS	
-	make install
-
-	cd $BASEDIR/dahdi_tools
-	if [ "$CLEAN" = "true" ]; then make clean; fi
-	./configure
-	make $MAKECPUS
-	make install
-	make config
-
 	if [ "$PAUSING" = "yes" ]; then
 		whiptail --title "ME VOIP Asterisk Install" --msgbox "This will now BUILD A LOT of source code (Asterisk, LibPRI, DAHDI, etc)." 12 78
+	fi
+	
+	if [ "$BUILDDAHDI" = "true" ]; then
+		cd $BASEDIR/dahdi
+		if [ "$CLEAN" = "true" ]; then make distclean; fi
+		make $MAKECPUS	
+		make install
+
+		cd $BASEDIR/dahdi_tools
+		if [ "$CLEAN" = "true" ]; then make clean; fi
+		./configure
+		make $MAKECPUS
+		make install
+		make config
 	fi
 	
 	if [ "$BUILDREDFONE" = "true" ]; then
