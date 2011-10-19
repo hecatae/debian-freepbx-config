@@ -8,13 +8,17 @@ class VOIPXmlConfiguredElement {
 	public function getId() { return $this->extension; }
 	public function getName() { return $this->name; }
 	
-	public function __construct($xml, $config=null, $addTo=null, $callable=false) {
+	public function __construct($xml, $config=null, $addTo=null, $callable=false, $autoNum=null) {
 		//echo "Constructor...\n";
 		$this->xml = $xml;
 		$this->config = $config;
 		
 		// Protect this against evil?
-		$this->extension = $this->readXMLAttrInt("extension");
+		if ($autoNum) {
+			$this->extension = $autoNum;
+		} else {
+			$this->extension = $this->readXMLAttrInt("extension");
+		}
 		$this->name = $this->readXMLAttrString("name");
 		
 		$this->parse();
@@ -66,6 +70,7 @@ class VOIPXmlConfiguredElement {
 			}		
 		}
 	
+		if (!$values) return;
 	
 		$this->config->xlsSheet = $this->config->excel->createSheet();
 		$this->config->xlsSheet->setTitle($sheetName);
@@ -126,6 +131,9 @@ class VOIPXmlConfiguredElement {
 	public function findRefs() {
 	}
 	
+	public function autoInboundRoute() {
+		$this->info("Missing autoInboundRoute() for {$this->extension}");
+	}
 	
 	public function applyConfigToFreePBX() {
 	
@@ -133,12 +141,16 @@ class VOIPXmlConfiguredElement {
 	
 	}	
 	
+	function readXMLBodyContents($xml) {
+		return utf8_decode( (string) $xml);
+	}
+	
 	function readXMLAttrString($name) {
-		return utf8_decode((string)$this->xml[$name]);
+		return utf8_decode((string)@$this->xml[$name]);
 	}
 	
 	function readXMLAttrInt($name) {
-		return utf8_decode((int)$this->xml[$name]);
+		return utf8_decode((int)@$this->xml[$name]);
 	}
 	
 	function explodeAndClean($txt) {
@@ -151,6 +163,13 @@ class VOIPXmlConfiguredElement {
 		}
 		return $ret;
 	}
+	
+	public function getArrayTxtInfo($arr) {
+		if (count($arr) == 0) return "";
+		$rgsTxt = $arr;
+		return implode(", ", $rgsTxt);
+	
+	}	
 	
 	public function getArrayItemInfo($arr) {
 		if (count($arr) == 0) return "";

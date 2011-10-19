@@ -7,7 +7,13 @@ class VOIPConfig extends VOIPXmlConfiguredElement {
 	public $trunks = array();
 	public $outRoutes = array();
 	public $inRoutes = array();
-	
+	public $channelMaps = array();
+	public $callables = array();
+	public $sounds = array();
+	public $uras = array();
+	public $recordings = array();
+	public $announces = array();
+	public $miscapps = array();
 	
 	public $mysqli = null;
 	public $astman = null;
@@ -48,15 +54,35 @@ class VOIPConfig extends VOIPXmlConfiguredElement {
 			$nu = new VOIPTrunk($xml, $this, "trunks");
 		}
 		
+		$i = 0;
 		foreach ($this->xml->outboundRoutes->outboundRoute as $xml) {
-			$nu = new VOIPOutboundRoute($xml, $this, "outRoutes");
+			$nu = new VOIPOutboundRoute($xml, $this, "outRoutes", false, ++$i);
 		}
 		
 		foreach ($this->xml->inboundRoutes->inboundRoute as $xml) {
-			$nu = new VOIPInboundRoute($xml, $this, "inRoutes");
+			$nu = new VOIPInboundRoute($xml, $this, "inRoutes", false);
 		}
 		
+		foreach ($this->xml->channelMaps->channelMap as $xml) {
+			$nu = new VOIPChannelMap($xml, $this, "channelMaps");
+		}
 		
+		$i = 0;
+		foreach ($this->xml->sounds->sound as $xml) {
+			$nu = new VOIPSound($xml, $this, "sounds", false, ++$i);
+		}		
+		
+		foreach ($this->xml->uras->ura as $xml) {
+			$nu = new VOIPURA($xml, $this, "uras");
+		}
+		
+		foreach ($this->xml->announcements->announce as $xml) {
+			$nu = new VOIPAnnounce($xml, $this, "announces");
+		}
+		
+		foreach ($this->xml->miscApps->miscApp as $xml) {
+			$nu = new VOIPMiscApp($xml, $this, "miscapps", true);
+		}
 	}
 	
 	public function writeExcel($excel) {
@@ -67,7 +93,13 @@ class VOIPConfig extends VOIPXmlConfiguredElement {
 		$this->writeExcelArray($this->confs);
 		$this->writeExcelArray($this->trunks);
 		$this->writeExcelArray($this->outRoutes);
-		$this->writeExcelArray($this->inRoutes);
+		$this->writeExcelArray($this->channelMaps);
+		$this->writeExcelArray($this->sounds);
+		$this->writeExcelArray($this->uras);
+		$this->writeExcelArray($this->recordings);
+		$this->writeExcelArray($this->announces);
+		
+		$this->outRoutes[1]->writeExcelHeader(null); // update the last one width's
 	}
 	
 	public function writeExcelArray($arr) {
@@ -87,13 +119,71 @@ class VOIPConfig extends VOIPXmlConfiguredElement {
 		$this->findObjRefsArray($this->trunks);
 		$this->findObjRefsArray($this->outRoutes);
 		$this->findObjRefsArray($this->inRoutes);
+		$this->findObjRefsArray($this->inRoutes);
+		
+		$this->findObjRefsArray($this->uras);
+		$this->findObjRefsArray($this->announces);
+		$this->findObjRefsArrayAutoNumber($this->recordings, 1);
+		
+		$this->afterFindRefs();
 	}
+	
+	public function afterFindRefs() {
+		// We need to auto-create inbound routes for extensions with DDR; the possible ones are users, queues, ringGroups, confs.
+		$this->autoInboundRouteArray($this->users);
+		$this->autoInboundRouteArray($this->queues);
+		$this->autoInboundRouteArray($this->ringGroups);
+		$this->autoInboundRouteArray($this->confs);
+		
+		$this->findFreeNumbers("Free extensions", array_keys($this->callables));
+		$this->findFreeNumbers("Free DDR numbers", array_keys($this->filterItemsByDDR($this->callables, true)));
+	}
+	
+	public function filterItemsByDDR($arr, $val) {
+		$ret = array();
+		foreach ($arr as $num => $item) {
+			if ($item->ddr == $val) $ret[$num] = $item;
+		}
+		return $ret;
+	}
+	
+	public function findFreeNumbers($name, $used) {
+		$numbers = array();
+		for ($i = 3400; $i < 3600; $i++) {
+			$numbers[$i] = false;
+		}
+		foreach ($used as $num) {
+			$numbers[$num] = true;
+		}
+		$frees = array();
+		foreach ($numbers as $num => $isUsed) {
+			if (!$isUsed) $frees[] = $num;
+		}
+		$freeNums = implode($frees, ",");
+		$this->info($name." (". count($frees)."): " . $freeNums);
+	
+	}
+	
+	
+	public function autoInboundRouteArray($arr) {
+		foreach ($arr as $item) {
+			$item->autoInboundRoute();
+		}
+	}	
 	
 	public function findObjRefsArray($arr) {
 		foreach ($arr as $item) {
 			$item->findRefs();
 		}
 	}
+	
+	public function findObjRefsArrayAutoNumber($arr, $start=0) {
+		$i = $start;
+		foreach ($arr as $item) {
+			$item->findRefs(++$i);
+		}
+	}
+	
 	
 	public function applyConfigToFreePBXArray($arr, $desc=null) {
 		if ($desc) {
@@ -172,8 +262,12 @@ class VOIPConfig extends VOIPXmlConfiguredElement {
 		$this->config->queryExec("DELETE from meetme");
 		
 		$this->config->queryExec("DELETE from trunks");
+		$this->config->queryExec("DELETE from trunk_dialpatterns");
+
 		$this->config->queryExec("DELETE from sip"); // For users and trunks?
 		$this->config->queryExec("DELETE from iax"); // For users and trunks?
+		
+		$this->config->queryExec("DELETE from zapchandids");
 		
 		
 		$this->applyConfigToFreePBXArray($this->users, 'users');
@@ -183,9 +277,27 @@ class VOIPConfig extends VOIPXmlConfiguredElement {
 		$this->applyConfigToFreePBXArray($this->trunks, 'trunks');
 		$this->applyConfigToFreePBXArray($this->outRoutes, 'outbound routes');
 		$this->applyConfigToFreePBXArray($this->inRoutes, 'inbound routes');
+		$this->applyConfigToFreePBXArray($this->channelMaps, 'channel maps');		
+		$this->applyConfigToFreePBXArray($this->sounds, 'sounds');
+		
+		$this->config->queryExec("DELETE from ivr where ivr_id > 1");
+		$this->config->queryExec("DELETE from ivr_dests");
+		$this->config->queryExec("DELETE from recordings where id > 1");
+		$this->config->queryExec("DELETE from announcement");
+		
+		$this->config->queryExec("DELETE from miscapps");
+		$this->config->queryExec("DELETE from featurecodes where modulename = 'miscapps'");
+		
+		$this->applyConfigToFreePBXArray($this->recordings, 'recordings');
+		$this->applyConfigToFreePBXArray($this->uras, 'uras');
+		$this->applyConfigToFreePBXArray($this->announces, 'announces');
+		$this->applyConfigToFreePBXArray($this->miscapps, 'miscapps');
+		
 		
 		
 		$this->doVoiceMailConfig();
+		$this->generateOutboundRulesFile();
+
 		
 		if (! hasErrors()) {
 			$this->warn("Reloading FreePBX Config (orange bar) automatically...");
@@ -250,6 +362,173 @@ class VOIPConfig extends VOIPXmlConfiguredElement {
 		$this->info("Successfully kept $kept users' voicemail password.");
 	}
 	
+	public function getUserArrayByField($arr, $field, $unique=true) {
+		$ret[] = array();
+		foreach ($arr as $user) {
+			$idx = $user->$field;
+			$item = array(
+				'name' => @$user->name, 
+				'secret' => @$user->secret, 
+				'extension' => @$user->extension, 
+				'adLogin' => @$user->adLogin, 
+				'voicemail' => @$user->voicemail, 
+				'email' => @$user->email, 
+				'type' => @$user->type, 
+				'area' => @$user->area
+				);
+			if ($unique) {
+				$ret[$idx] = $item;
+			} else {
+				if (!@$ret[$idx]) $ret[$idx] = array();
+				$ret[$idx][] = $item;
+			}
+		}
+		return $ret;
+	}
+	
+	public function getOutboundRoutesByAllow($names) {
+		$my = array();
+		foreach ($this->outRoutes as $rt) {
+			$use = false;
+			$allows = $rt->allowFor;
+			foreach ($names as $name) {
+				foreach ($allows as $allow) {
+					if (($allow == $name) || ($allow == "all")) {
+						$use = true;
+					}
+				}
+			}
+			if ($use) {
+				$my[] = $rt;
+			}
+		}
+		return $my;
+	}
+	
+	
+	
+	public function generateOutboundRulesFile($filename='/etc/asterisk/outbound_rules.conf') {
+		global $userContexts;
+		$s = "";
+		foreach ($userContexts as $name => $names) {
+			$allnames = implode($names, "-");
+			$this->info("Creating user context $name for $allnames");
+			$s .= $this->createUserContext($name, $names, $allnames);
+		}
+		
+		//$filename = '/etc/asterisk/outbound_rules.conf';
+		//$filename = 'outbound_rules.conf';
+		file_put_contents($filename, $s);
+	}
+	
+	private function createUserContext($name, $names, $allnames) {
+		$s = $this->getUserContextFixedStuff($allnames);
+		$s .= $this->getUserContextDynamic($name, $names, $allnames);
+		return $s;
+		
+	}
+	
+	private function getUserContextDynamic($name, $names, $allnames) {
+		$routes = $this->getOutboundRoutesByAllow($names);
+		$rt = array();
+		foreach ($routes as $route) {
+			$rt[] = "include => outrt-{$route->extension} ; {$route->name}";
+		}
+		$rts = implode($rt, "\n");
+	
+	
+		$s = "
+[outbound-$allnames]
+include => outbound-allroutes-custom
+$rts
+exten => foo,1,Noop(bar)		
+";
+		
+		return $s;
+	}
+	
+	private function getUserContextFixedStuff($name) {
+		$miscapps = "";
+		$allapps = array();
+		foreach ($this->miscapps as $ma) {
+			$allapps[] = "include => app-miscapps-" . $ma->id;
+		}
+		$miscapps = implode($allapps, "\n");
+	
+		return "
+[from-internal-xfer-$name]
+include => from-internal-custom
+include => parkedcalls
+include => ext-local-confirm
+include => findmefollow-ringallv2
+include => from-internal-additional-$name
+exten => s,1,Macro(hangupcall)
+exten => h,1,Macro(hangupcall)
+
+[from-internal-$name]
+include => from-internal-xfer-$name
+include => bad-number
+
+
+[from-internal-additional-$name]
+include => from-internal-additional-custom
+include => ext-paging
+include => app-blacklist
+include => app-speeddial
+include => app-recordings
+include => app-fax
+include => app-fmf-toggle
+include => ext-findmefollow
+include => fmgrps
+include => app-callwaiting-cwoff
+include => app-callwaiting-cwon
+include => ext-meetme
+$miscapps
+include => ext-group
+include => grps
+include => app-cf-busy-off
+include => app-cf-busy-off-any
+include => app-cf-busy-on
+include => app-cf-off
+include => app-cf-off-any
+include => app-cf-on
+include => app-cf-unavailable-off
+include => app-cf-unavailable-on
+include => app-cf-toggle
+include => ext-queues
+include => app-queue-toggle
+include => app-pbdirectory
+include => app-dnd-off
+include => app-dnd-on
+include => app-dnd-toggle
+include => app-dictate-record
+include => app-dictate-send
+include => app-calltrace
+include => app-directory
+include => app-echo-test
+include => app-speakextennum
+include => app-speakingclock
+include => app-languages
+include => vmblast-grp
+include => app-dialvm
+include => app-vmmain
+include => app-userlogonoff
+include => app-pickup
+include => app-zapbarge
+include => app-chanspy
+include => ext-test
+include => ext-local
+include => outbound-$name
+exten => h,1,Hangup		
+		
+		";
+	
+	
+	}
+	
+	
+	
+	
 	/*** mysql ***/
 	public function queryExec($sql) {
 		if ($this->mysql->query($sql) === TRUE) {
@@ -278,12 +557,24 @@ class VOIPConfig extends VOIPXmlConfiguredElement {
 		return $this->insert("iax", array('id' => $ext, 'keyword' => $name, 'data' => $value, 'flags' => $flags), true);
 	}
 	
-	public function addQueueDetailInsert($ext, $name, $value) {
-		return $this->insert("queues_details", array('id' => $ext, 'keyword' => $name, 'data' => $value), true);
+	public function addQueueDetailInsert($ext, $name, $value, $flags = null) {
+		if (!is_null($flags)) {
+			return $this->insert("queues_details", array('id' => $ext, 'keyword' => $name, 'data' => $value, 'flags' => $flags), true);
+		} else {
+			return $this->insert("queues_details", array('id' => $ext, 'keyword' => $name, 'data' => $value), true);
+		}
 	}
 	
 	public function astDbSet($family, $key, $value) {
-		$this->astman->database_put($family, $key, $value);
+		if (!$this->astman->database_put($family, $key, $value)) {
+			$this->error("Error on astDbSet! $family $key $value");
+		}
+	}
+	
+	public function astDbDel($family, $key) {
+		if (!$this->astman->database_del($family, $key)) {
+			//$this->error("Error on astDbDel! $family $key");
+		}	
 	}
 	
 }

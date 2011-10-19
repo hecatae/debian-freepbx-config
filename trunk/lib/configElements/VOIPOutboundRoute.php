@@ -15,9 +15,12 @@ class VOIPOutboundRoute extends VOIPXmlConfiguredElement {
 	public $patternsTxt = array();
 	public $trunksTxt = array();
 	public $trunks = array();
+	public $allowFor = array();
 	
 	public function parse() {
-		$this->sequence = $this->readXMLAttrInt("sequence");
+		$this->sequence = $this->extension;
+		$this->allowFor = $this->explodeAndClean($this->readXMLAttrString("allowFor"));
+		
 		foreach ($this->xml->pattern as $pattern) {
 			$pat = (string)$pattern; // Será?
 			$pat = trim($pat);
@@ -33,6 +36,20 @@ class VOIPOutboundRoute extends VOIPXmlConfiguredElement {
 			$this->trunksTxt[] = $tname;
 		}
 	}
+	
+	
+	public function getExcelColumnVars() {
+		return array(
+			'extension' => null, 
+			'name' => null,
+			'sequence' => null,
+			'patternsTxt' => $this->getArrayTxtInfo($this->patternsTxt),
+			'trunksTxt' => $this->getArrayTxtInfo($this->trunksTxt),
+			'allowFor' => $this->getArrayTxtInfo($this->allowFor)
+			);
+	}
+		
+	
 	
 	public function findRefs() {
 		foreach ($this->trunksTxt as $txt) {

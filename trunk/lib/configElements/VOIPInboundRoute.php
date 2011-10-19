@@ -3,6 +3,7 @@ class VOIPInboundRoute extends VOIPXmlConfiguredElement {
 	// <inboundRoute extension="1140638488" name="VONO pardini manda para Queue 3001" destination="ext-queues,3001,1" prefix="VONODDR" />
 	public $destination = null;
 	public $prefix = null;
+	public $ddr = true;
 	
 	public function parse() {
 		$this->destination = $this->readXMLAttrString("destination");

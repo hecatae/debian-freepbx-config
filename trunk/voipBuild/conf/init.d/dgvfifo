@@ -1,0 +1,162 @@
+#!/bin/bash
+#
+# fifodev      This shell script takes care of loading and unloading \
+#              Digivoice ISDN interface
+#
+# Based on zaptel.init initialization scripts by Digium(c)
+#
+# config: /etc/sysconfig/fifodev
+#
+# chkconfig: 2345 11 89
+# description: start fifodev service
+
+
+### BEGIN INIT INFO
+# Provides: dgvfifo
+# Required-Start: vlibd
+# Should-Start: 
+# Required-Stop:
+# Default-Start: 2 3 4 5
+# Default-Stop:
+# Description: start the isdn interface script
+### END INIT INFO
+
+
+
+initdir=/etc/init.d
+
+#
+# Determine which kind of configuration we're using
+#
+system=redhat  # assume redhat
+if [ -f /etc/debian_version ]; then
+    system=debian
+fi
+
+# Source function library.
+#ignored for now - check suse to know how make this
+if [ $system = redhat ] && [ -f $initdir/functions ]; then
+	. $initdir/functions || exit 0;
+fi
+
+# Source fifodev configuration.
+if [ $system = debian ]; then
+    [ -f /etc/default/fifodev ] && . /etc/default/fifodev
+elif [ $system = redhat ]; then
+    [ -f /etc/sysconfig/fifodev ] && . /etc/sysconfig/fifodev
+fi
+
+RMODULES=""
+# Reverse list for un-loading; don't change
+for x in $MODULES; do 
+    RMODULES="$x $RMODULES"
+done
+
+# Check that telephony is up.
+#[ "${TELEPHONY}" = "yes" ] || exit 0
+#
+#if [ "${DEBUG}" = "yes" ]; then
+#	ARGS="debug=1"
+#fi
+
+# Calling routines to create /dev files  
+is24=`uname -a | grep 2.4`
+
+[ "${is24}" ] && KERNELVERSION=24 || KERNELVERSION=26
+
+if [ ${KERNELVERSION} -lt 26 ];
+then
+    echo "Kernel 2.4....";
+    module="dgvfifo"
+    device="dgvfifo"
+    mode=666
+else
+    echo "Kernel 2.6....";
+    module="dgvfifo.ko"
+    device="dgvfifo"
+    mode=666
+fi
+
+RETVAL=0
+
+# See how we were called.
+case "$1" in
+  start)
+        # Load drivers
+	rmmod dgvfifo >& /dev/null
+
+	if [ $system = debian ]; then
+	    echo -n "Loading Digivoice's isdn drivers: " 
+	    modprobe dgvfifo >& /dev/null && echo -n "..............done!"
+	    echo "."
+	elif [ $system = redhat ]; then
+	    echo -n "Loading Digivoice's isdn drivers: " 
+	    modprobe dgvfifo
+	fi
+	
+	#remove stale inodes
+	rm -f /dev/${device}*
+
+	major=`awk "\\$2==\"${device}\" {print \\$1}" /proc/devices`
+
+	if [ ! $major ]; then
+		echo "Error getting major number ${major}! Aborted!"
+		exit 1
+	fi
+
+	echo "Allocating major number = $major"
+
+	echo "Creating /dev/${device}..."
+	###########################################################
+	# Create Signal inodes
+	###########################################################
+	echo "Creating fifo inodes..."
+	PORTS=64
+	COUNT=0
+	MINOR=0
+	while [ ${COUNT} -lt ${PORTS} ]; do
+	    mknod /dev/${device}${COUNT}  c  $major ${MINOR}
+	    chmod a+w /dev/${device}${COUNT}
+	    COUNT=$[${COUNT}+1]
+	    MINOR=$[${MINOR}+1]
+	done
+	
+	echo "..............OK!"
+	RETVAL=$?
+if [ $system = redhat ]; then	
+        [ $RETVAL -eq 0 ] && touch /var/lock/subsys/fifodev
+fi	
+        ;;
+  stop)
+  
+  
+        # Unload drivers
+        echo -n "Unloading dgvfifo hardware drivers: "  
+  
+	if [ $system = debian ]; then
+	    echo -n "Removing fifodev module: " 
+	    rmmod dgvfifo >& /dev/null && echo -n "..............done!"
+	    echo "."
+	elif [ $system = redhat ]; then
+	    echo -n "Removing fifodev module: " 
+	    rmmod -s dgvfifo
+	    echo "..............done!"
+	fi
+	
+	#remove stale inodes
+	rm -f /dev/${device}*	
+	RETVAL=$?
+
+        [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/fifodev
+        ;;
+ restart)
+	$0 stop
+	$0 start
+	;;
+  *)
+        echo "Usage: dgvfifo {start|stop|restart}"
+        exit 1
+esac
+
+exit $RETVAL
+
