@@ -68,12 +68,12 @@ chmod +x $BASEDIR/*.sh
 whiptail --title "ME VOIP Asterisk Install" --msgbox "This insane script is going to install Asterisk and FreePBX on your $DISTRO system from scratch. You have $NUMCPUS CPUs... really? Using $DGVSCHEME Digivoice drivers: ${DGVCHANVER} and ${VOICERVER}." 12 78
 
 # Proxy configuration.
-MYPROXYHOST=$(whiptail --title "ME VOIP Asterisk Install" --inputbox "Please enter your proxy host (just the hostname, without port). If you don't have one, leave it empty." 12 78 192.168.5.27 3>&1 1>&2 2>&3)
-MYPROXYPORT=$(whiptail --title "ME VOIP Asterisk Install" --inputbox "Please enter your proxy port." 12 78 3128 3>&1 1>&2 2>&3)
+MYPROXYHOST=$(whiptail --title "ME VOIP Asterisk Install" --inputbox "Please enter your proxy host (just the hostname, without port). If you don't have one, leave it empty." 12 78 "" 3>&1 1>&2 2>&3)
+MYPROXYPORT=$(whiptail --title "ME VOIP Asterisk Install" --inputbox "Please enter your proxy port." 12 78 "" 3>&1 1>&2 2>&3)
 
 if [ "a$MYPROXYHOST" = "a" ]; then
 	# No proxy, removing it. I dunno?
-	whiptail --title "ME VOIP Asterisk Install" --msgbox "I'm sorry, I'm not really sure how to handle no-proxy cases. We'll just hope for the best." 12 78
+	whiptail --title "ME VOIP Asterisk Install" --msgbox "Not using any proxies." 12 78
 else
 	# Setup the proxy, for subversion:
 	mkdir -p ~/.subversion
@@ -286,7 +286,7 @@ if [ "$BUILDASTERISK" = "true" ]; then
 	./configure --disable-xmldoc
 
 	cp $BASEDIR/asterisk.menuselect.makeopts $BASEDIR/asterisk/menuselect.makeopts
-	make menuselect
+	#make menuselect
 	make $MAKECPUS && echo "*************** Make Asterisk OK!"
 	make install
 	make samples
@@ -301,7 +301,7 @@ if [ "$BUILDASTERISK" = "true" ]; then
 	if [ "$CLEAN" = "true" ]; then make distclean; fi
 	./configure
 	cp $BASEDIR/asterisk_addons.menuselect.makeopts $BASEDIR/asterisk_addons/menuselect.makeopts
-	make menuselect
+	#make menuselect
 	make $MAKECPUS
 	make install
 	make samples
