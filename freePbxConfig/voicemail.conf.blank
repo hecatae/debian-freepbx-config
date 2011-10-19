@@ -40,7 +40,7 @@ attach=yes
 ;maxsecs=180
 ; Minimum length of a voicemail message in seconds for the message to be kept
 ; The default is no minimum.
-;minsecs=3
+minsecs=5
 ; Maximum length of greetings in seconds
 ;maxgreet=60
 ; How many milliseconds to skip forward/back when rew/ff in message playback
@@ -50,7 +50,7 @@ maxsilence=10
 ; Silence threshold (what we consider silence: the lower, the more sensitive)
 silencethreshold=128
 ; Max number of failed login attempts
-maxlogins=3
+maxlogins=30
 ;
 ; Move heard messages to the 'Old' folder automagically.  Defaults to on.
 ;moveheard=yes
@@ -144,9 +144,12 @@ maxlogins=3
 ; strftime(3) man page
 ;
 ; Default
-emaildateformat=%A, %B %d, %Y at %r
+;emaildateformat=%A, %B %d, %Y at %r
 ; 24h date format
 ;emaildateformat=%A, %d %B %Y at %H:%M:%S
+
+emaildateformat=%A, %d %B %Y as %H:%M:%S
+
 ;
 ; You can override the default program to send e-mail if you wish, too
 ;
@@ -188,7 +191,7 @@ emaildateformat=%A, %B %d, %Y at %r
 ; NOTE: All options can be expressed globally in the general section, and
 ; overridden in the per-mailbox settings, unless listed otherwise.
 ; 
-; tz=central 		; Timezone from zonemessages below. Irrelevant if envelope=no.
+tz=central24 		; Timezone from zonemessages below. Irrelevant if envelope=no.
 ; attach=yes 		; Attach the voicemail to the notification email *NOT* the pager email
 ; attachfmt=wav49	; Which format to attach to the email.  Normally this is the
 			; first format specified in the format parameter above, but this
@@ -320,8 +323,8 @@ sendvoicemail=yes ; Allow the user to compose and send a voicemail while inside
 ; R             24 hour time, including minute 
 ;
 eastern=America/New_York|'vm-received' Q 'digits/at' IMp
-central=America/Chicago|'vm-received' Q 'digits/at' IMp
-central24=America/Chicago|'vm-received' q 'digits/at' H N 'hours'
+central=America/Sao_Paulo|'vm-received' Q 'digits/at' IMp
+central24=America/Sao_Paulo|'vm-received' q 'digits/at' H N 'hours'
 military=Zulu|'vm-received' q 'digits/at' H N 'hours' 'phonetic/z_p'
 european=Europe/Copenhagen|'vm-received' a d b 'digits/at' HM
 

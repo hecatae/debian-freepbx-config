@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<config>
+	<externalIp>201.6.9.59</externalIp> <!-- External IP that is used to access the PBX - for NAT purposes -->
+	<localNet>192.168.66.0</localNet> <!-- Local networks (eg, 192.168.0.0/255.255.0.0) - the first part -->
+	<localNetMask>255.255.0.0</localNetMask> <!-- Local networks (eg, 192.168.0.0/255.255.0.0) - the second part -->
+
+	<users>
+		<user area="Family" extension="1001" name="Ricardo Pardini" secret="123456" type="softphone_handset" email="ricardo@pardini.net" voicemail="1234" ddr="true" ddd="true" international="true" queues="Welcome" ringgroups="Everybody"/>
+		<user area="Family" extension="1002" name="Ariadne Gomes" secret="123456" type="softphone_handset" email="dine@dine.tk" voicemail="1234" ddr="true" ddd="true" international="true" queues="Welcome" ringgroups="Everybody"/>
+	</users>
+
+	<queues>
+		<queue extension="2000" name="Welcome" prefix="WELL" recording="wav" sla="60" announce="60" />
+	</queues>
+
+	
+	<ringgroups>
+		<ringgroup extension="3000" name="Everybody" strategy="ringall" prefix="EVERYBODY"/>
+	</ringgroups>
+	
+	<confs>
+		<conf extension="5001" name="Pub Conf 01"/>
+		<conf extension="5002" name="Pub Conf 02"/>
+		<conf extension="5003" name="Pub Conf 03"/>
+		<conf extension="5004" name="Pub Conf 04"/>
+	</confs>
+	
+	<!-- In trunks context, 'extension' is actually trunk_id. -->
+	<trunks>
+		<trunk extension="1" name="VonoSIP_rpardini" type="vono" user="rpardini" password="123456" number="1140638488"/>
+	</trunks>
+	
+	<!-- In outboundRoute context, 'extension' is actually route_id. -->
+	<outboundRoutes>
+		<outboundRoute extension="1" name="Saida via VONO" sequence="0">
+			<pattern order="0">NXXXXXXX</pattern>
+			<pattern order="1">NXXXXXXXXX</pattern>
+			<outTrunk order="0">VonoSIP_rpardini</outTrunk>
+		</outboundRoute>
+	</outboundRoutes>
+	
+	<!-- In inboundRoute context, 'extension' is actually DID number. -->
+	<inboundRoutes>
+		<inboundRoute extension="1140638488" name="VONO pardini manda para Queue 2000" destination="ext-queues,2000,1" prefix="VONODDR" />
+	</inboundRoutes>
+	
+</config>

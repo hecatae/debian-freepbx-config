@@ -12,6 +12,15 @@ MYIPADDR=$(ip addr | tr -s " " | grep "^\ inet\ " | cut -d " " -f 3 | cut -d "/"
 whiptail --title "ME VOIP FreePBX Install" --msgbox "This will now install some Debian packages and configure them at hostname $MYHOSTNAME and IP address $MYIPADDR." 12 78
 
 cd $BASEDIR
+#cp munin-node.sh /etc/init.d/munin-node
+
+
+# create temp piko
+mkdir -p /opt/astdb
+echo "tmpfs           /opt/astdb      tmpfs   defaults        0       0" >> /etc/fstab
+mount /opt/astdb
+
+
 # set locales...
 echo -e "en_US.UTF-8 UTF-8\npt_BR ISO-8859-1\npt_BR.UTF-8 UTF-8\npt_PT ISO-8859-1\npt_PT.UTF-8 UTF-8\npt_PT@euro ISO-8859-15" > /etc/locale.gen
 /usr/sbin/locale-gen
@@ -57,19 +66,24 @@ fi
 
 cd $BASEDIR/freepbx
 
-mysqladmin -u$MYSQLUSER -p$MYSQLPASS create asterisk
-mysqladmin -u$MYSQLUSER -p$MYSQLPASS create asteriskcdrdb
+if [ ! -e /var/lib/mysql/asteriskcdrdb/agent_status.frm ]; then
+	mysqladmin -u$MYSQLUSER -p$MYSQLPASS create asterisk
+	mysqladmin -u$MYSQLUSER -p$MYSQLPASS create asteriskcdrdb
 
-mysql -u$MYSQLUSER -p$MYSQLPASS asterisk < SQL/newinstall.sql
-mysql -u$MYSQLUSER -p$MYSQLPASS asteriskcdrdb < SQL/cdr_mysql_table.sql
+	mysql -u$MYSQLUSER -p$MYSQLPASS asterisk < SQL/newinstall.sql
+	mysql -u$MYSQLUSER -p$MYSQLPASS asteriskcdrdb < SQL/cdr_mysql_table.sql
 
-mysql -u$MYSQLUSER -p$MYSQLPASS mysql -e "grant all privileges on asterisk.* to freepbx@localhost identified by 'freepbx123';"
-mysql -u$MYSQLUSER -p$MYSQLPASS mysql -e "grant all privileges on asteriskcdrdb.* to freepbx@localhost identified by 'freepbx123';"
+	mysql -u$MYSQLUSER -p$MYSQLPASS mysql -e "grant all privileges on asterisk.* to freepbx@localhost identified by 'freepbx123';"
+	mysql -u$MYSQLUSER -p$MYSQLPASS mysql -e "grant all privileges on asteriskcdrdb.* to freepbx@localhost identified by 'freepbx123';"
 
-mysql -u$MYSQLUSER -p$MYSQLPASS mysql -e "grant all privileges on asterisk.* to freepbxConfig@'%' identified by 'ast123';"
-mysql -u$MYSQLUSER -p$MYSQLPASS mysql -e "grant all privileges on asteriskcdrdb.* to freepbxConfig@'%' identified by 'ast123';"
+	mysql -u$MYSQLUSER -p$MYSQLPASS mysql -e "grant all privileges on asterisk.* to freepbxConfig@localhost identified by 'ast123';"
+	mysql -u$MYSQLUSER -p$MYSQLPASS mysql -e "grant all privileges on asteriskcdrdb.* to freepbxConfig@localhost identified by 'ast123';"
 
-mysql -u$MYSQLUSER -p$MYSQLPASS asteriskcdrdb < $BASEDIR/extraMysqlStatements.sql
+	mysql -u$MYSQLUSER -p$MYSQLPASS mysql -e "grant all privileges on asterisk.* to freepbxConfig@'%' identified by 'ast123';"
+	mysql -u$MYSQLUSER -p$MYSQLPASS mysql -e "grant all privileges on asteriskcdrdb.* to freepbxConfig@'%' identified by 'ast123';"
+
+	mysql -u$MYSQLUSER -p$MYSQLPASS asteriskcdrdb < $BASEDIR/extraMysqlStatements.sql
+fi
 
 
 # depois
@@ -116,6 +130,7 @@ sleep 2
 
 # para isto precisa tirar o digivoice
 echo "noload => chan_dgv.so" >> /etc/asterisk/modules.conf
+cp $BASEDIR/asterisk.conf /etc/asterisk/asterisk.conf
 
 
 cd $BASEDIR

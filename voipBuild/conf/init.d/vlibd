@@ -1,0 +1,228 @@
+#!/bin/bash
+#
+# vlibd        This shell script takes care of loading and unloading \
+#              Digivoice interfaces cards
+#
+# Based on zaptel.init initialization scripts by Digium(c)
+#
+# config: /etc/sysconfig/vlibd
+#
+# chkconfig: 2345 11 89
+# description: start vlib service
+
+
+### BEGIN INIT INFO
+# Provides:          vlibd
+# Required-Start:    $local_fs $remote_fs
+# Required-Stop:     $local_fs $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start/stop DigivoiceVlib
+# Description:       Start/stop DigivoiceVlib
+### END INIT INFO
+
+
+initdir=/etc/init.d
+
+#
+# Determine which kind of configuration we're using
+#
+system=redhat  # assume redhat
+if [ -f /etc/debian_version ]; then
+    system=debian
+fi
+
+# Source function library.
+#ignored for now - check suse to know how make this
+if [ $system = redhat ] && [ -f $initdir/functions ]; then
+	. $initdir/functions || exit 0;
+fi
+
+# Source vlibd configuration.
+if [ $system = debian ]; then
+    [ -f /etc/default/vlibd ] && . /etc/default/vlibd
+elif [ $system = redhat ]; then
+    [ -f /etc/sysconfig/vlibd ] && . /etc/sysconfig/vlibd
+fi
+
+if [ -z "${MODULES}" ]; then 
+	# Populate defaults if not present
+	MODULES="vlibd" 
+fi
+
+RMODULES=""
+# Reverse list for un-loading; don't change
+for x in $MODULES; do 
+    RMODULES="$x $RMODULES"
+done
+
+# Check that telephony is up.
+[ "${TELEPHONY}" = "yes" ] || exit 0
+
+if [ "${DEBUG}" = "yes" ]; then
+	ARGS="debug=1"
+fi
+
+RETVAL=0
+
+# See how we were called.
+case "$1" in
+  start)
+        # Load drivers
+	rmmod vlibd >& /dev/null
+
+	if [ $system = debian ]; then
+	    echo -n "Loading Digivoice's vlibd drivers: " 
+	    modprobe vlibd >& /dev/null && echo -n "..............done!"
+	    echo "."
+	elif [ $system = redhat ]; then
+	    echo -n "Loading Digivoice's vlibd drivers: " 
+	    modprobe vlibd
+	fi
+	
+	# Calling routines to create /dev files
+	
+	is24=`grep 2.4 /proc/version`
+
+	if [ -e ${is24} ]; 
+	then
+	    KERNELVERSION=26
+	else
+	    KERNELVERSION=24
+	fi
+	if [ ${KERNELVERSION} -lt 26 ];
+	then
+	    device="vlibd"
+	    mode=666
+	else
+	    device="vlibd"
+	    mode=666
+	fi
+
+	#remove stale inodes
+	rm -f /dev/${device}
+	rm -f /dev/${device}shm
+	rm -f /dev/${device}_s*
+	rm -f /dev/${device}_rs
+	rm -f /dev/${device}_ps
+	rm -f /dev/${device}_r*
+	rm -f /dev/${device}_p*
+	rm -f /dev/${device}_ccs*
+	
+
+	major=`awk "\\$2==\"/dev/$device\" {print \\$1}" /proc/devices`
+
+	echo "Allocating major number = $major"
+
+	echo "Creating /dev/${device}..."
+	mknod -m ${mode} /dev/${device} c $major 0
+	mknod -m ${mode} /dev/vlibdshm c $major 1
+	mknod -m ${mode} /dev/vlibd_rs c $major 2
+	mknod -m ${mode} /dev/vlibd_ps c $major 3
+	mknod -m ${mode} /dev/vlibdshm_ccs c $major 19
+
+	###########################################################
+	# Create Signal inodes
+	###########################################################
+	echo "Creating signal inodes..."
+	PORTS=10
+	COUNT=0
+	MINOR=4
+	while [ ${COUNT} -lt ${PORTS} ]; do
+	    mknod /dev/${device}_s${COUNT}  c  $major ${MINOR}
+	    chmod a+w /dev/${device}_s${COUNT}
+	    COUNT=$[${COUNT}+1]
+	    MINOR=$[${MINOR}+1]
+	done
+
+	###########################################################
+	# Create Record inodes
+	###########################################################
+	echo "Creating record inodes..."
+	PORTS=60
+	COUNT=0
+	MINOR=20
+	while [ ${COUNT} -lt ${PORTS} ]; do
+	    mknod /dev/${device}_r${COUNT}  c  $major ${MINOR}
+	    chmod a+w /dev/${device}_r${COUNT}
+	    COUNT=$[${COUNT}+1]
+	    MINOR=$[${MINOR}+1]
+	done
+
+	###########################################################
+	# Create PlayBack inodes
+	###########################################################
+	echo "Creating playback inodes..."
+	PORTS=72
+	COUNT=0
+	MINOR=81
+	while [ ${COUNT} -lt ${PORTS} ]; do
+	    mknod /dev/${device}_p${COUNT}  c  $major ${MINOR}
+	    chmod a+w /dev/${device}_p${COUNT}
+	    COUNT=$[${COUNT}+1]
+	    MINOR=$[${MINOR}+1]
+	done
+
+        ###########################################################
+        # Create CCS signalling inodes
+        ###########################################################
+        echo "Creating ccs signalling inodes..."
+        PORTS=10
+        COUNT=0
+        MINOR=154
+        while [ ${COUNT} -lt ${PORTS} ]; do
+            mknod /dev/${device}_ccs${COUNT}  c  $major ${MINOR}
+            chmod a+w /dev/${device}_p${COUNT}
+            COUNT=$[${COUNT}+1]
+            MINOR=$[${MINOR}+1]
+        done
+
+	
+	#rights to access files
+	chmod 777 -R /var/log/voicerlib
+	chmod 777 -R /var/lib/voicerlib
+	
+	
+	
+	
+	echo "..............OK!"
+	RETVAL=$?
+if [ $system = redhat ]; then
+        [ $RETVAL -eq 0 ] && touch /var/lock/subsys/vlibd
+fi	
+        ;;
+  stop)
+        # Unload drivers
+        echo -n "Unloading Digivoice's  hardware drivers: "
+	for x in $RMODULES; do 
+		if rmmod ${x} >& /dev/null; then
+			echo -n " $x"
+		fi
+	done
+	echo "."
+
+
+	if [ $system = debian ]; then
+	    echo -n "Removing vlibd module: " 
+	    rmmod vlibd >& /dev/null && echo -n "..............done!"
+	    echo "."
+	elif [ $system = redhat ]; then
+	    echo -n "Removing vlibd module: " 
+	    rmmod -s vlibd
+	    echo "..............done!"
+	fi
+	RETVAL=$?
+
+        [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/vlibd
+        ;;
+ restart)
+	$0 stop
+	$0 start
+	;;
+  *)
+        echo "Usage: vlibd {start|stop|restart}"
+        exit 1
+esac
+
+exit $RETVAL
+

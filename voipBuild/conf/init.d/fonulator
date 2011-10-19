@@ -1,0 +1,97 @@
+#!/bin/bash
+#
+# fonulator   Starts and Stops the Redfone fonulator utility
+#
+# chkconfig: - 60 50
+# description: Utility for configuring the Redfone fonebridge
+#              
+# processname: fonulator
+# config: /etc/redfone.conf
+
+
+### BEGIN INIT INFO
+# Provides:          fonulator
+# Required-Start:    $local_fs $remote_fs
+# Required-Stop:     $local_fs $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start/stop Fonulator
+# Description:       Start/stop Fonulator
+### END INIT INFO
+
+
+# Source function library.
+#. /etc/rc.d/init.d/functions
+
+# Source networking configuration.
+#. /etc/sysconfig/network
+
+# Check that networking is up.
+#[ ${NETWORKING} = "no" ] && exit 0
+
+[ -x /usr/local/bin/fonulator ] || exit 0
+
+RETVAL=0
+prog="fonulator"
+
+start() {
+        # Start daemons.
+
+        if [ -d /etc/ ] ; then
+                for i in `ls /etc/redfone.conf`; do
+                        site=`basename $i .conf`
+                        echo -n $"Starting $prog for $site: "
+                        /usr/local/bin/fonulator -v $i
+                        RETVAL=$?
+                        [ $RETVAL -eq 0 ] && {
+                           touch /var/lock/$prog
+                           echo $"$prog $site" 
+                        }
+                        echo
+                done
+        else
+                RETVAL=1
+        fi
+        return $RETVAL
+}
+
+stop() {
+        # Stop daemons.
+        echo -n $"Shutting down $prog: "
+        killproc $prog
+        RETVAL=$?
+        echo
+        [ $RETVAL -eq 0 ] && rm -f /var/lock/$prog
+        return $RETVAL
+}
+
+# See how we were called.
+case "$1" in
+  start)
+        start
+        ;;
+  stop)
+        stop
+        ;;
+  restart|reload)
+        stop
+        start
+        RETVAL=$?
+        ;;
+  condrestart)
+        if [ -f /var/lock/$prog ]; then
+            stop
+            start
+            RETVAL=$?
+        fi
+        ;;
+  status)
+        status $prog
+        RETVAL=$?
+        ;;
+  *)
+        echo $"Usage: $0 {start|stop|restart|condrestart|status}"
+        exit 1
+esac
+
+exit $RETVAL

@@ -10,6 +10,8 @@ class VOIPTrunk extends VOIPXmlConfiguredElement {
 	public $isVONOtrunk = false;
 	public $isCustomTrunk = false;
 	public $isSIPURAtrunk = false;
+	public $patterns = array();
+	public $patTxt = array();
 	
 	public function parse() {
 		$this->type = $this->readXMLAttrString("type");
@@ -24,6 +26,9 @@ class VOIPTrunk extends VOIPXmlConfiguredElement {
 		} elseif ($this->type == "sipura_fxo") {
 			$this->tech = "sip";
 			$this->isSIPURAtrunk = true;
+		} elseif ($this->type == "fonebridge") {
+			$this->tech = "dahdi";
+			$this->isCustomTrunk = true;
 		} elseif ($this->type == "digivoice") {
 			$this->tech = "custom";
 			$this->isCustomTrunk = true;
@@ -32,7 +37,34 @@ class VOIPTrunk extends VOIPXmlConfiguredElement {
 			$this->error("Unknown trunk type '{$this->type}' for trunk {$this->extension} {$this->name}");
 		}
 		
+		// <trunkDialPattern prefix="00"  pass="ZXX."           prepend="0021"   seq="1"   desc="fidelidade embratel ddi"/>
+		$this->patterns = array();
+		$this->patTxt = array();
+		foreach ($this->xml->trunkDialPattern as $pattern) {
+			$pat = array();
+			$pat['prefix'] = $pattern['prefix'];
+			$pat['pass'] = $pattern['pass'];
+			$pat['prepend'] = $pattern['prepend'];
+			$pat['seq'] = $pattern['seq'];
+			$pat['desc'] = $pattern['desc'];
+			$this->patTxt[] = $pattern['desc'] . "(" . $pat['prefix'] . "/" . $pat['pass'] . "/" . $pat['prepend'] . ")";
+			$desc = $pattern['desc'];
+			$this->info("Found pattern '$desc' for trunk {$this->name}");
+			$this->patterns[] = $pat;
+		}
 	}
+	
+	public function getExcelColumnVars() {
+		return array(
+			'extension' => null, 
+			'name' => null,
+			'type' => null,
+			'tech' => null,
+			'patterns' => $this->getArrayTxtInfo($this->patTxt)
+			);
+	}
+			
+	
 	
 	public function applyConfigToFreePBX() {
 		/*
@@ -92,7 +124,15 @@ class VOIPTrunk extends VOIPXmlConfiguredElement {
 			$this->config->addSIPInsert("tr-peer-{$this->extension}", "username", "{$this->user}", $i++);		
 		}
 		
-		
+		foreach ($this->patterns as $pat) {
+			$this->config->insert("trunk_dialpatterns", array(
+				'trunkid' => "{$this->extension}",
+				'match_pattern_prefix' => $pat['prefix'],
+				'match_pattern_pass' => $pat['pass'],
+				'prepend_digits' => $pat['prepend'],
+				'seq' => $pat['seq']
+				));			
+		}
 	}
 	
 }
