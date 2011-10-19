@@ -283,8 +283,8 @@ if [ "$BUILDASTERISK" = "true" ]; then
 
 	./configure --disable-xmldoc
 
-	#make menuselect
 	cp $BASEDIR/asterisk.menuselect.makeopts $BASEDIR/asterisk/menuselect.makeopts
+	make menuselect
 	make $MAKECPUS && echo "*************** Make Asterisk OK!"
 	make install
 	make samples
@@ -298,8 +298,8 @@ if [ "$BUILDASTERISK" = "true" ]; then
 	cd $BASEDIR/asterisk_addons
 	if [ "$CLEAN" = "true" ]; then make distclean; fi
 	./configure
-	#make menuselect
 	cp $BASEDIR/asterisk_addons.menuselect.makeopts $BASEDIR/asterisk_addons/menuselect.makeopts
+	make menuselect
 	make $MAKECPUS
 	make install
 	make samples
