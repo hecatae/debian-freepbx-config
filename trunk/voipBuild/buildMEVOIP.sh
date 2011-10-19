@@ -21,6 +21,8 @@ BUILDREDFONE=false
 PAUSING="yes"
 DGVSCHEME="unstable"
 DEBIANVLIBDINIT=""
+BUILDILBC="no"
+
 
 FONULATOR=fonulator-2.0.3
 LIBFB=libfb-2.0.2
@@ -264,12 +266,12 @@ if [ "$BUILDASTERISK" = "true" ]; then
 	if [ "$CLEAN" = "true" ]; then make distclean; fi
 	echo "1.6.2.19-PARDINI" > $BASEDIR/asterisk/.version && echo "**** Set Asterisk version... forced... beware"
 
-	if [ "$EXTRAS" = "true" ]; then
+	if [ "$BUILDILBC" = "true" ]; then
 		cd $BASEDIR/asterisk
 		if [ ! -f codecs/ilbc/iLBC_define.h ]; then
 			wget -P codecs/ilbc http://www.ietf.org/rfc/rfc3951.txt
-			wget -q -O - http://www.ilbcfreeware.org/documentation/extract-cfile.awk | sed -e 's/\r//g' > codecs/ilbc/extract-cfile.awk
 			(cd codecs/ilbc && awk -f extract-cfile.awk rfc3951.txt)
+			wget -q -O - http://www.ilbcfreeware.org/documentation/extract-cfile.awk | sed -e 's/\r//g' > codecs/ilbc/extract-cfile.awk
 			echo "Done iLBC codec..."
 		else
 			echo "iLBC codec already done."
