@@ -147,7 +147,7 @@ if [ "$UPDATESVN" = "true" ]; then
 	
 	
 	cd $BASEDIR
-	svn co http://svn.digium.com/svn/asterisk/tags/1.6.2.19 asterisk
+	svn co http://svn.digium.com/svn/asterisk/tags/1.6.2.20 asterisk
 	
 	if [ "$BUILDDAHDI" = "true" ]; then
 		cd $BASEDIR
@@ -264,7 +264,7 @@ if [ "$BUILDASTERISK" = "true" ]; then
 
 	cd $BASEDIR/asterisk
 	if [ "$CLEAN" = "true" ]; then make distclean; fi
-	echo "1.6.2.19-PARDINI" > $BASEDIR/asterisk/.version && echo "**** Set Asterisk version... forced... beware"
+	echo "1.6.2.20-PARDINI" > $BASEDIR/asterisk/.version && echo "**** Set Asterisk version... forced... beware"
 
 	if [ "$BUILDILBC" = "true" ]; then
 		cd $BASEDIR/asterisk
